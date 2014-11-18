@@ -1,5 +1,6 @@
 require 'rest_client'
 require 'nokogiri'
+require 'yaml'
 
 module Repose
   class CoverageApp < Sinatra::Base
@@ -13,14 +14,19 @@ module Repose
     	# get results from jolokia
     	content_type :json
     	# TODO: url and port needs to be configurable
-    	body RestClient.get 'http://localhost:8778/jolokia/read/%22com.rackspace.com.papi.components.checker.handler%22:type=%22InstrumentedHandler%22,scope=*,name=*'
+        config = YAML.load_file(File.expand_path("config.yaml", Dir.pwd))
+        host = config['host']
+        port = config['port']
+
+    	body RestClient.get "http://#{host}:#{port}/jolokia/read/%22com.rackspace.com.papi.components.checker.handler%22:type=%22InstrumentedHandler%22,scope=*,name=*"
 
     end
 
     get '/api/roles' do
     	content_type :json
     	#TODO: needs to be configurable
-    	directory = "/Users/dimi5963/projects/repose/repose-aggregator/functional-tests/spock-functional-test/target/repose_home/configs"
+        config = YAML.load_file(File.expand_path("config.yaml", Dir.pwd))
+    	directory = config['config_directory']
     	validator = "#{directory}/validator.cfg.xml"
 
     	validatorDoc = Nokogiri::XML.parse(File.open(validator))
@@ -47,7 +53,8 @@ module Repose
     	file = params[:file]
     	status 200
     	#config directory where the outputs go (needs to be configurable) TODO
-    	directory = "/Users/dimi5963/projects/repose/repose-aggregator/functional-tests/spock-functional-test/target/repose_home/configs"
+        config = YAML.load_file(File.expand_path("config.yaml", Dir.pwd))
+        directory = config['output_directory']
     	body IO.read("#{directory}/#{file}")
     end
 
