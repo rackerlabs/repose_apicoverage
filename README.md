@@ -31,6 +31,14 @@ How
   - navigate to http://<server>:9292.  Validate that you can see the state machine.
   - click on "Render Results" button to view api coverage data
   
+Vagrant
+----------------
+If you don't want to go through all that pain, you can just run everything in vagrant.  The vagrant file in this repo spins up a virtual environment with repose and proper version of api-checker, install all dependencies, sets up a dummy responder service, starts repose, and installs and starts this tool. 
+  - Install vagrant from https://www.vagrantup.com/
+  - in vagrant directory, run `vagrant up`
+  - after completion, you can access the tool via http://localhost:8081 and you can execute repose requests via http://localhost
+  - if you want to run your configurations, just add it to vagrant/configs directory and execute `vagrant provision`
+
 Current features
 -----------------
   - ability to generate data based on one validator (support for multiple validators is unstable)
