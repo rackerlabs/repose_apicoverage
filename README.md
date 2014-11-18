@@ -7,7 +7,8 @@ Why
 ------------------
 We need to be able to not only calculate code coverage but also verify that all of the api we expose is tested.  This is now possible by integrating api testing with repose and api-checker.  This tool validates this idea.
 
-NOTE: this is just a protype.  A more stable solution will be engineered based on outcomes from this prototype.
+NOTE: this is just a prototype.  A more stable solution will be engineered based on outcomes from this prototype.
+NOTE#2: this is running against api-checker v1.0.20-snapshot.  You can utilize this snapshot by cloning https://github.com/rackerlabs/api-checker/tree/dimitry-coverage and building it (`mvn clean install` on the root directory).
 
 How
 ------------------
