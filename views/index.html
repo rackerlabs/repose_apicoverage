@@ -8,16 +8,15 @@
       svg {
         width: 100%;
       }
-      #contents {
-        position: relative;;
-        top: -19em;
-      }
     </style>
   </head>
   <body>
     <div id="cluster_content">
     </div>
     <p id="contents">
+      <button type="button" id="load-chart" data-loading-text="Refresh Chart" class="btn btn-primary">
+        Refresh Chart
+      </button>
       <button type="button" id="execute" data-loading-text="Run Tests" class="btn btn-primary">
         Render Results
       </button>
@@ -90,26 +89,7 @@
       var failedPaths = [];
       var visitedHappyPaths = [];
       var visitedFailedPaths = [];
-      //two calls -- /api/roles and /api/roles/:role
-      $.when( $.ajax( "api/roles" ) ).then(function( data, textStatus, jqXHR ) {
-        //result is role list of json
-        var that = this;
-        that.roleData = data;
-        for(var i = 0; i < that.roleData.length; i ++ ){
-          var specificRoleData = that.roleData[i]
-          $.when($.ajax("api/roles/file?file=" + data[i].file)).then(function(innerData, innerStatus, innerXHR){
-            var jsGraphviz = document.createElement('script');
-            jsGraphviz.type = "text/vnd.graphviz";
-            jsGraphviz.id = specificRoleData.role;
-            var first = document.getElementsByTagName('script')[0];
-            first.parentNode.insertBefore(jsGraphviz, first);
-            jsGraphviz.innerHTML = innerData;
-            $('#cluster_content').append(render(specificRoleData.role, "svg")); //this renders a role          
-            nodeData = nodeData.concat(innerData.match(/(\w+->\w+)/g));
-            failStates = failStates.concat(uniqBy(innerData.match(/(w\w+[M|U])/g), JSON.stringify));
-          });
-        }
-      });
+      var scopeList = [];
 
       if ( typeof String.prototype.endsWith != 'function' ) {
         String.prototype.endsWith = function( str ) {
@@ -178,13 +158,11 @@
         }
       }
 
-      function traverse(id, path) {
-        console.log("path", path)
+      function traverse(id, path, scope) {
         //start with S0
-        var current = nodeList.filter(function(t){ return t.graphId === id})[0];
+        var current = nodeList.filter(function(t){ return (t.id === scope)})[0].nodes.filter(function(t){ return t.graphId === id})[0];
         //get all  paths
-        var textList = nodeData.filter(function(t){ return t.startsWith(id + "->")});
-        console.log(textList)
+        var textList = nodeData.filter(function(t){ return (t.id === scope)})[0].paths.filter(function(t){ return t.startsWith(id + "->")});
         if(textList.length === 0 ){
           addToPath(id, path)
         } else {
@@ -193,7 +171,7 @@
             var text = textList[i];
             //console.log(text)
             //get child nodes
-            var childNodeList = nodeList.filter(function(t){ return t.graphId === textList[i].split("->")[1]});
+            var childNodeList = nodeList.filter(function(t){ return (t.id === scope)})[0].nodes.filter(function(t){ return t.graphId === textList[i].split("->")[1]});
             for(var j = 0; j < childNodeList.length; j ++ ){
               var childNode = childNodeList[j];
               //console.log(childNode);
@@ -201,22 +179,18 @@
                 //end node
                 addToPath(id, path + "->" + childNode.dotId)
               } else {
-                traverse(childNode.graphId, path + "->" + childNode.dotId)
+                traverse(childNode.graphId, path + "->" + childNode.dotId, scope)
               }
             }
           }          
         }
       }
 
-
-
-      function traverseVisited(id, path) {
-        console.log("path", path)
+      function traverseVisited(id, path, scope) {
         //start with S0
-        var current = nodeList.filter(function(t){ return t.graphId === id})[0];
+        var current = nodeList.filter(function(t){ return (t.id === scope)})[0].nodes.filter(function(t){ return t.graphId === id})[0];
         //get all  paths
-        var textList = nodeData.filter(function(t){ return t.startsWith(id + "->")});
-        console.log(textList)
+        var textList = nodeData.filter(function(t){ return (t.id === scope)})[0].paths.filter(function(t){ return t.startsWith(id + "->")});
         if(textList.length === 0 && current.count > 0 ){
           addToVisitedPath(id, path)
         } else {
@@ -225,37 +199,39 @@
             var text = textList[i];
             //console.log(text)
             //get child nodes
-            var childNodeList = nodeList.filter(function(t){ return t.graphId === textList[i].split("->")[1]});
+            var childNodeList = nodeList.filter(function(t){ return (t.id === scope)})[0].nodes.filter(function(t){ return t.graphId === textList[i].split("->")[1]});
             for(var j = 0; j < childNodeList.length; j ++ ){
               var childNode = childNodeList[j];
-              console.log(childNode.graphId, current.graphId, current.graphId === childNode.graphId, current.graphId == childNode.graphId);
 
               if(current.graphId === childNode.graphId && childNode.count > 0) {
                 //end node
 
                 addToVisitedPath(id, path + "->" + childNode.dotId)
               } else if (childNode.count > 0) {
-                traverseVisited(childNode.graphId, path + "->" + childNode.dotId)
+                traverseVisited(childNode.graphId, path + "->" + childNode.dotId, scope)
               }
             }
           }          
         }
       }
 
-      function colorGraph(id) {
+      function colorGraph(id, scope) {
+        //get id in scope
+        var current = nodeList.filter(function(t){ return (t.id === scope)})[0].nodes.filter(function(t){ return t.graphId === id})[0];
         //get id
-        var current = nodeList.filter(function(t){ return t.graphId === id})[0];
+        //var current = nodeList.filter(function(t){ return t.graphId === id})[0];
         var ellipse = current.graph.next();
         if(ellipse.length > 0){
           ellipse.attr('fill', getColor(current.graphId));
           //get all nodes that start with id
-          var textList = nodeData.filter(function(t){ return t.startsWith(id + "->")});
+          var textList = nodeData.filter(function(t){ return (t.id === scope)})[0].paths.filter(function(t){ return t.startsWith(id + "->")});
           for(var i = 0; i < textList.length; i ++){
             //get child nodes
-            var childNodeList = nodeList.filter(function(t){ return t.graphId === textList[i].split("->")[1]});
+            var childNodeList = nodeList.filter(function(t){ return (t.id === scope)})[0].nodes.filter(function(t){ return t.graphId === textList[i].split("->")[1]});
+            //nodeList.filter(function(t){ return t.graphId === textList[i].split("->")[1]});
             for(var j = 0; j < childNodeList.length; j ++ ){
               var childNode = childNodeList[j];
-              var edge = $("#cluster_content title").filter(function(t) { return ($(this).text() === textList[i]) });
+              var edge = $("#" + scope + "-content title").filter(function(t) { return ($(this).text() === textList[i]) });
               var path = edge.next();
               if(childNode.count > 0){
                 if(current.graphId === childNode.graphId){
@@ -276,7 +252,7 @@
                     title.text(titleText + " - " + childNode.count);
                     visitedPaths.push(textList[i]);
                   }
-                  colorGraph(childNode.graphId);
+                  colorGraph(childNode.graphId, scope);
                 } else if (current.count <= childNode.count) {
                   //get temp 
                   var tempList = tempNodeCount.filter(function(t) { return t.graphId === childNode });
@@ -294,7 +270,7 @@
                       title.text(titleText + " - " + current.count);
                       visitedPaths.push(textList[i]);
                     }
-                    colorGraph(childNode.graphId);
+                    colorGraph(childNode.graphId, scope);
                   } else {
                     var temp = tempList[0];
                     temp.count = temp.count - current.count;
@@ -306,7 +282,7 @@
                       title.text(titleText + " - " + current.count);
                       visitedPaths.push(textList[i]);
                     }
-                    colorGraph(childNode.graphId);
+                    colorGraph(childNode.graphId, scope);
                   }
                 } 
               }
@@ -317,6 +293,71 @@
 
       var rgb = [96,96,255]
       $(function(){
+        $('#load-chart').on('click', function(){
+          nodeData = [];
+          nodeList = [];
+          failStates = [];
+          tempNodeCount = [];
+          visitedPaths = [];
+          happyPaths = [];
+          failedPaths = [];
+          visitedHappyPaths = [];
+          visitedFailedPaths = [];
+          scopeList = [];         
+          $('#total_passed_paths').html(0);
+          $('#covered_passed_paths').html(0);
+          $('#percent_passed_paths').html(0);
+          $('#total_failed_paths').html(0);
+          $('#covered_failed_paths').html(0);
+          $('#percent_failed_paths').html(0);
+          $('#failed-details').html('');
+          $('#passed-details').html(''); 
+          $.when( $.ajax( "api/roles" ) ).then(function( data, textStatus, jqXHR ) {
+            //result is role list of json
+            var that = this;
+            that.roleData = data;
+            for(var i = 0; i < that.roleData.length; i ++ ){
+              var specificRoleData = that.roleData[i];
+              (function(specificRoleData){
+                $.when($.ajax("api/roles/file?file=" + data[i].file)).then(function(innerData, innerStatus, innerXHR){
+                  var div = document.createElement('div');
+                  div.id = specificRoleData.role + "-content";
+                  if(document.getElementById(specificRoleData.role + "-content") === null){
+                    document.getElementById('cluster_content').appendChild(div);
+                  }
+                  var jsGraphviz = document.createElement('script');
+                  jsGraphviz.type = "text/vnd.graphviz";
+                  jsGraphviz.id = specificRoleData.role;
+                  var first = document.getElementsByTagName('script')[0];
+                  if(document.getElementById(specificRoleData.role) === null){
+                    first.parentNode.insertBefore(jsGraphviz, first);                    
+                    jsGraphviz.type = "text/vnd.graphviz";
+                    jsGraphviz.id = specificRoleData.role;
+                    jsGraphviz.innerHTML = innerData;
+                    $('#' + div.id).append(render(specificRoleData.role, "svg")); //this renders a role          
+                  } else {
+                    document.getElementById(specificRoleData.role).innerHTML = innerData;
+                    $('#' + div.id).html(render(specificRoleData.role, "svg")); //this renders a role          
+                  }
+                  
+                  //get nodeData for specific role
+                  var roleNodeDataList = nodeData.filter(function(t){ return (t.id === specificRoleData.role)});
+                  if(roleNodeDataList.length > 0){
+                    roleNodeDataList[0].paths = roleNodeDataList[0].paths.concat(innerData.match(/(\w+->\w+)/g));
+                  } else {
+                    nodeData.push({id: specificRoleData.role, paths: innerData.match(/(\w+->\w+)/g)});
+                  }
+                  var failStatesList = failStates.filter(function(t){ return (t.id === specificRoleData.role)});
+                  if(failStatesList.length > 0){
+                    failStatesList[0].paths = failStatesList[0].paths.concat(uniqBy(innerData.match(/(w\w+[M|U])/g), JSON.stringify));
+                  } else {
+                    failStates.push({id: specificRoleData.role, paths: uniqBy(innerData.match(/(w\w+[M|U])/g), JSON.stringify)});
+                  }
+                });
+              })(specificRoleData);
+            }
+          });
+        });
         $('#execute').on('click',function(){
           $.when( $.ajax( "api/results" ) ).then(function( data, textStatus, jqXHR ) {
             var result = data;
@@ -330,25 +371,40 @@
               //scope = role = id
               var realNode = node.match(/name=\"(\w+)\"/)[1];
               var scope = node.match(/scope=\"(\w+)_.*\"/)[1];
+              scopeList.push(scope);
 
               //get the nodes that match the actual names
               //instead of just title do #role title
-              var nodeInGraph = $("#cluster_content title").filter(function() { return ($(this).text() === realNode) });
+              var nodeInGraph = $("#" + scope + "-content title").filter(function() { return ($(this).text() === realNode) });
               if(nodeInGraph.length == 0 ){
                 //this is a fail state.  it's usually a <previous pass state before _>(U|M|H|C)F_<end role>
                 var tokens = realNode.split('_');
-                for(var i = 0; i < failStates.length; i ++){
-                  if(tokens[0].endsWith(failStates[i].lastCharacter() + 'F')){
+                //get the fail state for this role
+                var failState = failStates.filter(function(t){ return (t.id === scope)})[0];
+                for(var i = 0; i < failState.paths.length; i ++){
+                  if(tokens[0].endsWith(failState.paths[i].lastCharacter() + 'F')){
                     //dotId and graphId are different here
-                    nodeInGraph = $("#cluster_content title").filter(function() { return ($(this).text() === failStates[i]) });
-                    nodeList.push({graphId: failStates[i], dotId: realNode, count : result.value[node].Count, graph: nodeInGraph});
+                    nodeInGraph = $("#" + scope + "-content title").filter(function() { return ($(this).text() === failState.paths[i]) });
+                    //
+                    var roleNodeList = nodeList.filter(function(t){ return (t.id === scope)});
+                    if(roleNodeList.length > 0){
+                      roleNodeList[0].nodes.push({graphId: failState.paths[i], dotId: realNode, count : result.value[node].Count, graph: nodeInGraph});
+                    } else {
+                      nodeList.push({id: scope, nodes: [{graphId: failState.paths[i], dotId: realNode, count : result.value[node].Count, graph: nodeInGraph}]});
+                    }
                   }
                 }
               } else {
                 //this should now be dotId, graphId, count 
-                nodeList.push({dotId: realNode, graphId: realNode, count : result.value[node].Count, graph: nodeInGraph})
+                var roleNodeList = nodeList.filter(function(t){ return (t.id === scope)});
+                if(roleNodeList.length > 0){
+                  roleNodeList[0].nodes.push({dotId: realNode, graphId: realNode, count : result.value[node].Count, graph: nodeInGraph});
+                } else {
+                  nodeList.push({id: scope, nodes: [{dotId: realNode, graphId: realNode, count : result.value[node].Count, graph: nodeInGraph}]});
+                }
               }
             }
+
             /**
             iterate through node list
             1. start at S0
@@ -356,9 +412,13 @@
             2. find all paths that end with this node
             3. for each path, get the previous node and find out how many counts are there.  add that count to the stroke
             */
-            colorGraph("S0");
-            traverse("S0", "S0");
-            traverseVisited("S0", "S0");
+            for(var i = 0; i < scopeList.length; i ++){
+              //colorGraph will color the dot output
+              colorGraph("S0", scopeList[i]);
+              //traverse the graph and find total number of paths
+              traverse("S0", "[" + scopeList[i] + "] S0", scopeList[i]);
+              traverseVisited("S0", "[" + scopeList[i] + "] S0", scopeList[i]);
+            }
             $('#total_passed_paths').html(uniqBy(happyPaths, JSON.stringify).length);
             $('#covered_passed_paths').html(uniqBy(visitedHappyPaths, JSON.stringify).length);
             $('#percent_passed_paths').html(uniqBy(visitedHappyPaths, JSON.stringify).length / uniqBy(happyPaths, JSON.stringify).length * 100);
@@ -368,7 +428,6 @@
             $('#failed-details').html(uniqBy(visitedFailedPaths, JSON.stringify).join('<br/>'));
             $('#passed-details').html(uniqBy(visitedHappyPaths, JSON.stringify).join('<br/>'));
           });
-          $('#execute').html('Refresh')
         });
       });
     </script>

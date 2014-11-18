@@ -1,0 +1,4 @@
+host: localhost
+port: 8778
+config_directory: /etc/repose
+output_directory: /etc/repose

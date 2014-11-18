@@ -1,0 +1,22 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
+VAGRANTFILE_API_VERSION = "2"
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  config.vm.box = "trusty-server-cloudimg-amd64"
+
+  config.vm.box_url = "http://cloud-images.ubuntu.com/vagrant/trusty/current/trusty-server-cloudimg-amd64-vagrant-disk1.box"
+  config.vm.provision :shell, inline: 'sudo apt-get update -y'
+  config.vm.provision :shell, inline: 'sudo apt-get install openjdk-7-jre -y'
+  config.vm.provision :shell, inline: 'sudo apt-get install -y wget curl patch python-pip'
+  config.vm.provision :shell, inline: 'sudo pip install gunicorn'
+  config.vm.provision :shell, inline: 'sudo pip install httpbin '
+  config.vm.provision :shell, inline: 'sudo nohup gunicorn httpbin:app &'
+  config.vm.provision :shell, inline: 'sudo java -javaagent:/vagrant/lib/extras/jolokia-jvm-1.2.3-agent.jar -Dcom.sun.management.jmxremote.port=10011 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.local.only=true -jar /usr/share/repose/repose-valve.jar -c /etc/repose/ &'
+  config.vm.network :forwarded_port, guest: 80, host: 8080
+  config.vm.synced_folder "repose", "/usr/share/repose", create: true
+  config.vm.synced_folder "configs", "/etc/repose", create: true
+  config.vm.synced_folder "../", "/vagrant", create: true
+end
