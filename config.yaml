@@ -1,4 +1,4 @@
 host: localhost
 port: 8778
-config_directory: /etc/repose
-output_directory: /etc/repose
+config_directory: /Users/dimi5963/projects/repose/repose-aggregator/functional-tests/spock-functional-test/target/repose_home/configs
+output_directory: /Users/dimi5963/projects/repose/repose-aggregator/functional-tests/spock-functional-test/target/repose_home/configs

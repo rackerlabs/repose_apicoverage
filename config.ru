@@ -5,7 +5,7 @@ Bundler.require
 
 require Dir.pwd + '/app.rb'
 
-set :environment, :development
+set :environment, :production
 set :sessions, true
 set :session_secret, 'SDglk3Sdkh3SD3#@d'
 
