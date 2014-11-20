@@ -383,12 +383,14 @@
                 console.log('tokens', tokens)
                 //get the fail state for this role
                 var failState = failStates.filter(function(t){ return (t.id === scope)})[0];
+                console.log('fail states', failState)
                 for(var i = 0; i < failState.paths.length; i ++){
+                  console.log('comparison',
+                    tokens[0], 
+                    failState.paths[i].lastCharacter(),
+                    tokens[0].lastCharacter().toUpperCase() === failState.paths[i].lastCharacter())
                   if(tokens[0].endsWith(failState.paths[i].lastCharacter() + 'F')
-                   || tokens[0].toUpperCase().endsWith('U')
-                   || tokens[0].toUpperCase().endsWith('M')
-                   || tokens[0].toUpperCase().endsWith('C')
-                   || tokens[0].toUpperCase().endsWith('R')){
+                   || tokens[0].lastCharacter().toUpperCase() === failState.paths[i].lastCharacter()){
                     //dotId and graphId are different here
                     nodeInGraph = $("#" + scope + "-content title").filter(function() { return ($(this).text() === failState.paths[i]) });
                     console.log('failed node in graph', nodeInGraph)
