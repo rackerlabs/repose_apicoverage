@@ -39,6 +39,24 @@ If you don't want to go through all that pain, you can just run everything in va
   - after completion, you can access the tool via http://localhost:8081 and you can execute repose requests via http://localhost
   - if you want to run your configurations, just add it to vagrant/configs directory and execute `vagrant provision`
 
+### Sample workflow
+  1. Clone this repository: `https://github.com/rackerlabs/repose_apicoverage`
+  2. Navigate to vagrant directory: `cd repose_apicoverage\vagrant`
+  3. Update your validator.cfg.xml file in vagrant/configs directory.  Your validator should have a role attribute.
+  4. Spin up vagrant: `vagrant up`
+  5. Navigate to `localhost:8081` in your browser.  Make sure the page comes up.
+  6. In another shell window, curl with your request to localhost:8080 `curl localhost:8080/v3/public_ips -H 'x-role: role` with the role matching the role attribute in your validator.
+  7. In the browser, click on `Refresh Chart` button and validate that a chart came up
+  8. Click on `Render results` button and validate that you can see your request charted
+  9. Continue steps 6-8.
+
+### Updating validator in vagrant
+  1. If you update your validator.cfg.xml or wadl file, you'll need to restart repose
+  2. In another shell the vagrant directory, get into vagrant: `vagrant ssh`
+  3. Kill repose: `killall java`
+  4. Execute repose to start it up again: `sudo java -javaagent:/usr/share/coverage/lib/extras/jolokia-jvm-1.2.3-agent.jar -Dcom.sun.management.jmxremote.port=10011 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.local.only=true -jar /usr/share/repose/repose-valve.jar -c /etc/repose/ &`
+  5. repeat steps 6 to 8 from sample workflow.
+
 Current features
 -----------------
   - ability to generate data based on one validator (support for multiple validators is unstable)
