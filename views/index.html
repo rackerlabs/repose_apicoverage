@@ -349,9 +349,9 @@
                   }
                   var failStatesList = failStates.filter(function(t){ return (t.id === specificRoleData.role)});
                   if(failStatesList.length > 0){
-                    failStatesList[0].paths = failStatesList[0].paths.concat(uniqBy(innerData.match(/(w\w+[M|U])/g), JSON.stringify));
+                    failStatesList[0].paths = failStatesList[0].paths.concat(uniqBy(innerData.match(/(w\w+[MUCR])/g), JSON.stringify));
                   } else {
-                    failStates.push({id: specificRoleData.role, paths: uniqBy(innerData.match(/(w\w+[M|U])/g), JSON.stringify)});
+                    failStates.push({id: specificRoleData.role, paths: uniqBy(innerData.match(/(w\w+[MUCR])/g), JSON.stringify)});
                   }
                 });
               })(specificRoleData);
@@ -378,14 +378,20 @@
               var nodeInGraph = $("#" + scope + "-content title").filter(function() { return ($(this).text() === realNode) });
               if(nodeInGraph.length == 0 ){
                 //this is a fail state.  it's usually a <previous pass state before _>(U|M|H|C)F_<end role>
+                //apparently, it could also end in [u|m|h|c]
                 var tokens = realNode.split('_');
+                console.log('tokens', tokens)
                 //get the fail state for this role
                 var failState = failStates.filter(function(t){ return (t.id === scope)})[0];
                 for(var i = 0; i < failState.paths.length; i ++){
-                  if(tokens[0].endsWith(failState.paths[i].lastCharacter() + 'F')){
+                  if(tokens[0].endsWith(failState.paths[i].lastCharacter() + 'F')
+                   || tokens[0].toUpperCase().endsWith('U')
+                   || tokens[0].toUpperCase().endsWith('M')
+                   || tokens[0].toUpperCase().endsWith('C')
+                   || tokens[0].toUpperCase().endsWith('R')){
                     //dotId and graphId are different here
                     nodeInGraph = $("#" + scope + "-content title").filter(function() { return ($(this).text() === failState.paths[i]) });
-                    //
+                    console.log('failed node in graph', nodeInGraph)
                     var roleNodeList = nodeList.filter(function(t){ return (t.id === scope)});
                     if(roleNodeList.length > 0){
                       roleNodeList[0].nodes.push({graphId: failState.paths[i], dotId: realNode, count : result.value[node].Count, graph: nodeInGraph});

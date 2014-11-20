@@ -7,6 +7,7 @@ sudo pip install httpbin
 sudo nohup gunicorn httpbin:app &
 sudo gem install nokogiri
 sudo gem install gherkin
+sudo gem install ffi
 sudo java -javaagent:/usr/share/coverage/lib/extras/jolokia-jvm-1.2.3-agent.jar -Dcom.sun.management.jmxremote.port=10011 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.local.only=true -jar /usr/share/repose/repose-valve.jar -c /etc/repose/ &
 gem install bundler
 cd /usr/share/coverage 
