@@ -1,0 +1,38 @@
+<template name="home">
+  <div class="page auth">
+    <nav>
+      <div class="nav-group">
+        <a href="#" class="js-menu nav-item"><span class="icon-list-unordered"></span></a>
+      </div>
+    </nav>
+
+    <div class="content-scrollable">
+      <div class="wrapper-auth">
+        <h1 class="title-auth">Search for Repose Endpoint.</h1>
+        <p class="subtitle-auth" >Right now it's only for localhost</p>
+
+        <form>
+          {{#if errorMessages}}
+            <div class="list-errors">
+              {{#each errorMessages}}
+                <div class="list-item">{{this}}</div>
+              {{/each}}
+            </div>
+          {{/if}}
+
+          <div class="input-symbol  {{errorClass 'endpoint'}}">
+            <input type="text" name="endpoint" placeholder="Your Repose Endpoint" />
+            <span class="icon-new" title="Your Repose Endpoint"></span>
+          </div>
+
+          <div class="input-symbol  {{errorClass 'jolokia'}}">
+            <input type="text" name="jolokia" placeholder="Your Repose Jolokia Endpoint" />
+            <span class="icon-new" title="Your Jolokia Endpoint"></span>
+          </div>
+
+          <button type="submit" class="btn-primary">Search</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</template>
